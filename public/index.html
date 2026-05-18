@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antigravity — Team Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0d14;--s1:#111420;--s2:#181c2e;--s3:#1f2438;
+  --b1:#252a40;--b2:#333a58;--b3:#4a5280;
+  --blue:#5b8df8;--blue2:#89b4ff;--blue3:#1a2d5a;
+  --green:#22d67a;--green2:#5effa8;--green3:#0d3d24;
+  --amber:#f5a623;--amber2:#ffc966;--amber3:#3d2800;
+  --red:#ef5350;--red2:#ff8a80;
+  --purple:#9c6ffc;--purple2:#c4a6ff;
+  --teal:#1de9b6;--teal2:#64ffda;
+  --coral:#ff7043;--coral2:#ff9e80;
+  --text:#dde2f5;--muted:#6677aa;--dim:#3a4266;
+  --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 50% 35% at 5% 0%,rgba(91,141,248,0.08),transparent 60%),radial-gradient(ellipse 35% 25% at 95% 100%,rgba(156,111,252,0.06),transparent 60%);pointer-events:none;z-index:0}
+
+/* ── Layout ── */
+.shell{display:flex;min-height:100vh;position:relative;z-index:1}
+.sidebar{width:220px;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;flex-shrink:0}
+.main{flex:1;overflow-y:auto;min-width:0}
+
+/* ── Sidebar ── */
+.sb-logo{padding:22px 18px 18px;border-bottom:1px solid var(--b1)}
+.sb-logo h1{font-size:18px;font-weight:700;letter-spacing:-0.4px;color:var(--text)}
+.sb-logo h1 em{color:var(--blue);font-style:normal}
+.sb-logo p{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:3px;letter-spacing:.5px}
+.sb-section{padding:14px 18px 4px;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--dim)}
+.sb-nav{display:flex;flex-direction:column;gap:1px;padding:0 8px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.sb-item:hover{color:var(--text);background:var(--s2)}
+.sb-item.on{color:var(--blue2);background:var(--s2)}
+.sb-item svg{width:15px;height:15px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sb-badge{margin-left:auto;background:var(--blue3);color:var(--blue2);font-size:10px;font-family:var(--mono);padding:1px 6px;border-radius:10px}
+.sb-bottom{margin-top:auto;padding:14px 18px;border-top:1px solid var(--b1)}
+.sb-conn{display:flex;align-items:center;gap:7px;font-size:11px;font-family:var(--mono);color:var(--muted)}
+.sb-dot{width:6px;height:6px;border-radius:50%;background:var(--dim)}
+.sb-dot.live{background:var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── Page wrapper ── */
+.page{display:none;padding:28px 32px 60px}
+.page.on{display:block}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+.ph-left h2{font-size:22px;font-weight:700;letter-spacing:-.5px}
+.ph-left p{font-size:12px;color:var(--muted);font-family:var(--mono);margin-top:4px}
+
+/* ── Components ── */
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:18px}
+.card-sm{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:10px}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:7px;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue2);color:var(--bg)}
+.btn-primary:disabled{opacity:.3;cursor:not-allowed}
+.btn-ghost{background:var(--s2);border:1px solid var(--b1);color:var(--text)}
+.btn-ghost:hover{border-color:var(--b2);background:var(--s3)}
+.btn-red{background:rgba(239,83,80,.12);border:1px solid rgba(239,83,80,.25);color:var(--red2)}
+.btn-red:hover{background:rgba(239,83,80,.22)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 10px;font-size:11px}
+
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.field input,.field select,.field textarea{background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:9px 12px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;transition:border-color .2s;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue)}
+.field input::placeholder,.field textarea::placeholder{color:var(--dim)}
+.field select option{background:var(--s2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* ── Stats row ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+.stat{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:14px 16px}
+.stat-n{font-size:26px;font-weight:700;line-height:1}
+.stat-l{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:3px}
+.blue .stat-n{color:var(--blue2)}
+.green .stat-n{color:var(--green2)}
+.amber .stat-n{color:var(--amber2)}
+.purple .stat-n{color:var(--purple2)}
+
+/* ── Pipeline ── */
+.pipeline{display:flex;margin-bottom:20px;border:1px solid var(--b1);border-radius:10px;overflow:hidden}
+.pipe{flex:1;padding:10px 14px;background:var(--s1);border-right:1px solid var(--b1);position:relative}
+.pipe:last-child{border-right:none}
+.pipe-l{font-size:9px;font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.pipe-v{font-size:13px;font-weight:600;margin-top:2px;color:var(--dim)}
+.pipe.active .pipe-l{color:var(--blue)}
+.pipe.active .pipe-v{color:var(--blue2)}
+.pipe.done .pipe-l{color:var(--green)}
+.pipe.done .pipe-v{color:var(--green2)}
+.pipe.err .pipe-v{color:var(--red2)}
+
+/* ── Log terminal ── */
+.terminal{background:#060810;border:1px solid var(--b1);border-radius:8px;padding:12px;font-family:var(--mono);font-size:11.5px;max-height:160px;overflow-y:auto;margin-bottom:14px}
+.terminal::-webkit-scrollbar{width:3px}
+.terminal::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+.tl{padding:1px 0;line-height:1.65}
+.tl.i{color:var(--blue2)}.tl.ok{color:var(--green2)}.tl.w{color:var(--amber2)}.tl.e{color:var(--red2)}.tl.d{color:var(--muted)}
+
+/* ── Upload zone ── */
+.drop-zone{border:2px dashed var(--b2);border-radius:12px;padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--s1);position:relative;margin-bottom:16px}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--blue);background:rgba(91,141,248,.04)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-zone h3{font-size:15px;font-weight:600;margin-bottom:5px}
+.drop-zone p{font-size:11px;color:var(--muted);font-family:var(--mono)}
+
+/* ── Team chart ── */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.member-card{background:var(--s1);border:1px solid var(--b1);border-radius:12px;padding:14px;cursor:pointer;transition:border-color .15s;position:relative}
+.member-card:hover{border-color:var(--b2)}
+.member-card.detected{border-style:dashed}
+.member-card.me{border-color:var(--blue);border-width:2px}
+.avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0}
+.av-blue{background:var(--blue3);color:var(--blue2)}
+.av-green{background:var(--green3);color:var(--green2)}
+.av-amber{background:var(--amber3);color:var(--amber2)}
+.av-purple{background:rgba(156,111,252,.18);color:var(--purple2)}
+.av-teal{background:rgba(29,233,182,.12);color:var(--teal2)}
+.av-coral{background:rgba(255,112,67,.15);color:var(--coral2)}
+.av-gray{background:var(--s3);color:var(--muted)}
+.member-name{font-size:13px;font-weight:600;margin-top:1px}
+.member-role{font-size:11px;color:var(--muted);margin-top:2px}
+.stack-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.tag{font-size:10px;padding:2px 7px;border-radius:4px;font-family:var(--mono)}
+.tag-blue{background:var(--blue3);color:var(--blue2)}
+.tag-green{background:var(--green3);color:var(--green2)}
+.tag-amber{background:var(--amber3);color:var(--amber2)}
+.tag-purple{background:rgba(156,111,252,.15);color:var(--purple2)}
+.tag-gray{background:var(--s3);color:var(--muted)}
+.member-meta{font-size:10px;color:var(--dim);font-family:var(--mono);margin-top:8px;line-height:1.7}
+.mention-bar{height:3px;background:var(--s3);border-radius:2px;margin-top:6px;overflow:hidden}
+.mention-fill{height:100%;background:var(--blue);border-radius:2px;transition:width .4s}
+.me-badge{position:absolute;top:10px;right:10px;font-size:9px;background:var(--blue3);color:var(--blue2);padding:1px 6px;border-radius:4px;font-family:var(--mono);letter-spacing:.5px}
+
+/* ── Meeting cards ── */
+.meeting-list{display:flex;flex-direction:column;gap:10px}
+.meeting-card{background:var(--s1);border:1px solid var(--b1);border-radius:12px;overflow:hidden}
+.meeting-head{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
+.meeting-head:hover{background:var(--s2)}
+.meeting-type-badge{font-size:10px;font-family:var(--mono);padding:3px 9px;border-radius:5px;font-weight:500;white-space:nowrap}
+.type-scrum{background:rgba(91,141,248,.15);color:var(--blue2)}
+.type-internal{background:rgba(245,166,35,.15);color:var(--amber2)}
+.type-custom{background:rgba(156,111,252,.15);color:var(--purple2)}
+.type-oneon1{background:rgba(34,214,122,.15);color:var(--green2)}
+.meeting-title{font-size:13px;font-weight:600;flex:1}
+.meeting-date{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.meeting-body{border-top:1px solid var(--b1);padding:16px;display:none}
+.meeting-card.open .meeting-body{display:block}
+.extract-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.extract{background:var(--s2);border-radius:8px;padding:12px}
+.ex-title{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.ex-title.task{color:var(--blue2)}.ex-title.deadline{color:var(--amber2)}.ex-title.person{color:var(--purple2)}.ex-title.decision{color:var(--teal2)}.ex-title.action{color:var(--green2)}
+.ex-item{font-size:11px;padding:5px 8px;background:var(--s3);border-radius:5px;margin-bottom:4px;line-height:1.5;display:flex;gap:6px}
+.ex-item::before{content:'›';color:var(--muted);flex-shrink:0}
+.transcript-box{background:#040608;border:1px solid var(--b1);border-radius:6px;padding:12px;font-family:var(--mono);font-size:11px;line-height:1.7;color:#7788bb;max-height:180px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.transcript-box::-webkit-scrollbar{width:3px}
+.transcript-box::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+
+/* ── Tasks ── */
+.task-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;background:var(--s1);border:1px solid var(--b1);border-radius:9px;margin-bottom:7px;transition:border-color .15s}
+.task-item:hover{border-color:var(--b2)}
+.chk{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--b2);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .15s}
+.chk.done{background:var(--green);border-color:var(--green)}
+.chk.done::after{content:'✓';font-size:10px;color:#fff}
+.task-txt{font-size:13px;line-height:1.5;flex:1}
+.task-txt.done{text-decoration:line-through;color:var(--muted)}
+.task-from{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:3px}
+.filters{display:flex;gap:6px;margin-bottom:16px}
+.flt{padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--b1);background:var(--s2);color:var(--muted);transition:all .15s;font-family:var(--mono)}
+.flt.on{border-color:var(--blue);color:var(--blue2);background:rgba(91,141,248,.1)}
+
+/* ── Ask AI ── */
+.qa-box{background:var(--s1);border:1px solid var(--b1);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.qa-input-row{display:flex;gap:10px;padding:14px}
+.qa-input{flex:1;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:11px 14px;font-family:var(--font);font-size:13px;color:var(--text);outline:none;transition:border-color .2s}
+.qa-input:focus{border-color:var(--blue)}
+.qa-input::placeholder{color:var(--dim)}
+.qa-suggestions{display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px}
+.qa-sug{font-size:11px;padding:5px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--b1);color:var(--muted);cursor:pointer;transition:all .15s;font-family:var(--mono)}
+.qa-sug:hover{border-color:var(--blue);color:var(--blue2)}
+.qa-answer{padding:16px;border-top:1px solid var(--b1);font-size:13px;line-height:1.8;color:var(--text)}
+.qa-answer-meta{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:8px}
+.qa-history{display:flex;flex-direction:column;gap:8px}
+.qa-item{background:var(--s1);border:1px solid var(--b1);border-radius:9px;padding:12px 14px}
+.qa-q{font-size:12px;font-weight:600;color:var(--blue2);font-family:var(--mono);margin-bottom:6px}
+.qa-a{font-size:12px;line-height:1.7;color:var(--text)}
+
+/* ── Modal ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--b2);border-radius:14px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--b1)}
+
+/* ── Chips ── */
+.chip{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:500;font-family:var(--mono)}
+.chip-blue{background:rgba(91,141,248,.15);color:var(--blue2)}
+.chip-green{background:rgba(34,214,122,.15);color:var(--green2)}
+.chip-amber{background:rgba(245,166,35,.15);color:var(--amber2)}
+.chip-purple{background:rgba(156,111,252,.15);color:var(--purple2)}
+.chip-teal{background:rgba(29,233,182,.12);color:var(--teal2)}
+
+/* ── Spinner ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{width:14px;height:14px;border:2px solid rgba(91,141,248,.25);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--green);border-radius:8px;padding:10px 16px;font-size:12px;color:var(--green2);font-family:var(--mono);opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;z-index:200}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── Empty ── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty span{font-size:32px;display:block;margin-bottom:10px}
+.empty h3{font-size:15px;font-weight:600;color:var(--text);margin-bottom:5px}
+.empty p{font-size:12px;font-family:var(--mono);line-height:1.6}
+
+/* ── File bar ── */
+.file-bar{display:none;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 13px;margin-bottom:14px}
+.file-bar.show{display:flex}
+
+/* ── Insights ── */
+.person-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--s2);border-radius:7px;margin-bottom:6px}
+.freq-bar{height:4px;background:var(--s3);border-radius:2px;overflow:hidden;margin-top:5px}
+.freq-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--blue),var(--purple))}
+
+@media(max-width:640px){
+  .shell{flex-direction:column}
+  .sidebar{width:100%;flex-direction:row;flex-wrap:wrap}
+  .stats{grid-template-columns:1fr 1fr}
+  .extract-grid{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <span style="
+        font-size:18px;
+        font-weight:800;
+        color:#E2231A;
+        letter-spacing:-0.5px;
+        font-family:'Inter',sans-serif;
+      ">TCS</span>
+      <span style="color:#555;font-size:14px;font-weight:300">/</span>
+      <span style="
+        font-size:18px;
+        font-weight:700;
+        color:#1BA0D7;
+        letter-spacing:-0.5px;
+        font-family:'Inter',sans-serif;
+      ">Cisco</span>
+    </div>
+    <p style="
+      font-size:10px;
+      color:#8899cc;
+      font-family:'JetBrains Mono',monospace;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      margin-top:2px;
+    ">Project Analysis</p>
+  </div>
+  <div class="sb-section">Workspace</div>
+  <nav class="sb-nav">
+    <button class="sb-item on" onclick="nav('upload',this)">
+      <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+      Upload Audio
+    </button>
+    <button class="sb-item" onclick="nav('team',this)">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Team Chart
+      <span class="sb-badge" id="sb-team-count">0</span>
+    </button>
+    <button class="sb-item" onclick="nav('meetings',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Meetings
+      <span class="sb-badge" id="sb-meet-count">0</span>
+    </button>
+    <button class="sb-item" onclick="nav('tasks',this)">
+      <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      My Tasks
+      <span class="sb-badge" id="sb-task-count">0</span>
+    </button>
+    <button class="sb-item" onclick="nav('ask',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Ask Everything
+    </button>
+    <button class="sb-item" onclick="nav('insights',this)">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Insights
+    </button>
+  </nav>
+  <div class="sb-section">Config</div>
+  <nav class="sb-nav">
+    <button class="sb-item" onclick="nav('settings',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Settings
+    </button>
+  </nav>
+  <div class="sb-bottom">
+    <div class="sb-conn">
+      <div class="sb-dot" id="sbDot"></div>
+      <span id="sbConnLabel">Not connected</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+<!-- ── UPLOAD ── -->
+<div class="page on" id="page-upload">
+  <div class="ph">
+    <div class="ph-left"><h2>Upload Audio</h2><p>Transcribe → analyse → save to team database</p></div>
+  </div>
+  <div class="pipeline">
+    <div class="pipe" id="p1"><div class="pipe-l">Step 1</div><div class="pipe-v" id="p1v">Select file</div></div>
+    <div class="pipe" id="p2"><div class="pipe-l">Step 2</div><div class="pipe-v" id="p2v">Transcribe</div></div>
+    <div class="pipe" id="p3"><div class="pipe-l">Step 3</div><div class="pipe-v" id="p3v">AI Analysis</div></div>
+    <div class="pipe" id="p4"><div class="pipe-l">Step 4</div><div class="pipe-v" id="p4v">Save → Supabase</div></div>
+  </div>
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" accept="audio/*,video/*">
+    <div style="font-size:28px;margin-bottom:10px">🎙</div>
+    <h3>Drop your meeting recording here</h3>
+    <p>MP3 · WAV · M4A · OGG · Any size · Hindi, Tamil, Telugu, English supported</p>
+  </div>
+  <div class="file-bar" id="fileBar">
+    <span style="font-size:18px">🎧</span>
+    <div style="flex:1"><div style="font-size:13px;font-weight:600" id="fileName">—</div><div style="font-size:10px;color:var(--muted);font-family:var(--mono)" id="fileSize">—</div></div>
+    <button class="btn btn-ghost btn-xs" onclick="removeFile()">Remove</button>
+  </div>
+  <div class="grid2" style="margin-bottom:12px">
+    <div class="field">
+      <label>Session label</label>
+      <input type="text" id="sessionLabel" placeholder="e.g. Monday scrum, Call with Ravi...">
+    </div>
+    <div class="field">
+      <label>Meeting type</label>
+      <select id="meetingType">
+        <option value="scrum">Scrum Standup (Mon/Wed)</option>
+        <option value="internal">Internal Meeting (Fri)</option>
+        <option value="oneon1">1-on-1</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+  </div>
+  <div class="terminal" id="terminal"><div class="tl d">// Antigravity ready. Upload a recording to begin.</div></div>
+  <div class="row">
+    <button class="btn btn-primary" id="processBtn" onclick="startProcess()" disabled>
+      <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <span id="processBtnTxt">Process Audio</span>
+    </button>
+    <button class="btn btn-ghost" id="cancelBtn" style="display:none" onclick="cancelProcess()">Cancel</button>
+  </div>
+</div>
+
+<!-- ── TEAM CHART ── -->
+<div class="page" id="page-team">
+  <div class="ph">
+    <div class="ph-left"><h2>Team Chart</h2><p>Your team — built from recordings + manual entries</p></div>
+    <button class="btn btn-primary btn-sm" onclick="openAddMember()">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add teammate
+    </button>
+  </div>
+  <!-- Meeting schedule strip -->
+  <div class="card" style="margin-bottom:16px;padding:12px 16px">
+    <div class="row" style="gap:10px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--muted);font-family:var(--mono)">Meeting schedule:</span>
+      <span class="chip chip-blue">Mon &amp; Wed — Scrum standup</span>
+      <span class="chip chip-amber">Friday — Internal project meeting</span>
+      <button class="btn btn-ghost btn-xs" onclick="openAddMeetingType()">+ Custom type</button>
+    </div>
+  </div>
+  <div class="team-grid" id="teamGrid">
+    <div class="empty"><span>👥</span><h3>No teammates yet</h3><p>Add manually or upload a recording<br>to auto-detect names.</p></div>
+  </div>
+</div>
+
+<!-- ── MEETINGS ── -->
+<div class="page" id="page-meetings">
+  <div class="ph">
+    <div class="ph-left"><h2>Meeting Log</h2><p>All recordings organised by meeting type</p></div>
+    <div class="row" style="gap:8px">
+      <select id="meetFilter" class="field" style="background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:7px 10px;font-size:12px;color:var(--text);font-family:var(--mono)" onchange="renderMeetings()">
+        <option value="all">All types</option>
+        <option value="scrum">Scrum</option>
+        <option value="internal">Internal</option>
+        <option value="oneon1">1-on-1</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+  </div>
+  <div id="meetingList"><div class="empty"><span>📅</span><h3>No meetings yet</h3><p>Upload your first recording to see it here.</p></div></div>
+</div>
+
+<!-- ── TASKS ── -->
+<div class="page" id="page-tasks">
+  <div class="ph">
+    <div class="ph-left"><h2>My Tasks</h2><p>All tasks extracted from every recording</p></div>
+  </div>
+  <div class="filters">
+    <button class="flt on" onclick="filterTasks('all',this)">All</button>
+    <button class="flt" onclick="filterTasks('pending',this)">Pending</button>
+    <button class="flt" onclick="filterTasks('done',this)">Done</button>
+  </div>
+  <div id="taskList"><div class="empty"><span>✅</span><h3>No tasks yet</h3><p>Tasks will appear after processing recordings.</p></div></div>
+</div>
+
+<!-- ── ASK EVERYTHING ── -->
+<div class="page" id="page-ask">
+  <div class="ph">
+    <div class="ph-left"><h2>Ask Everything</h2><p>Ask any question — AI reads all your recordings to answer</p></div>
+  </div>
+  <div class="qa-box">
+    <div class="qa-input-row">
+      <input class="qa-input" id="qaInput" placeholder="e.g. What is Ravi working on? What are my pending tasks? What is the overall workflow?" onkeydown="if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askQuestion()}">
+      <button class="btn btn-primary" onclick="askQuestion()" id="askBtn">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Ask
+      </button>
+    </div>
+    <div class="qa-suggestions">
+      <span class="qa-sug" onclick="askSuggestion(this)">What is my role in this project?</span>
+      <span class="qa-sug" onclick="askSuggestion(this)">What are all my pending tasks?</span>
+      <span class="qa-sug" onclick="askSuggestion(this)">Who works on MongoDB?</span>
+      <span class="qa-sug" onclick="askSuggestion(this)">What were this week's key decisions?</span>
+      <span class="qa-sug" onclick="askSuggestion(this)">What deadlines are coming up?</span>
+      <span class="qa-sug" onclick="askSuggestion(this)">Summarise the overall project workflow</span>
+    </div>
+  </div>
+  <div id="qaHistory" class="qa-history"></div>
+</div>
+
+<!-- ── INSIGHTS ── -->
+<div class="page" id="page-insights">
+  <div class="ph"><div class="ph-left"><h2>Insights</h2><p>Patterns across all your recordings</p></div></div>
+  <div class="stats">
+    <div class="stat blue"><div class="stat-n" id="ins-s">0</div><div class="stat-l">Sessions</div></div>
+    <div class="stat green"><div class="stat-n" id="ins-t">0</div><div class="stat-l">Tasks</div></div>
+    <div class="stat amber"><div class="stat-n" id="ins-d">0</div><div class="stat-l">Deadlines</div></div>
+    <div class="stat purple"><div class="stat-n" id="ins-p">0</div><div class="stat-l">People</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;margin-bottom:12px">👥 Most mentioned people</div>
+      <div id="insightPeople"><div style="font-size:12px;color:var(--muted)">No data yet.</div></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:600;margin-bottom:12px">⏰ All deadlines</div>
+      <div id="insightDeadlines"><div style="font-size:12px;color:var(--muted)">No deadlines found.</div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div style="font-size:12px;font-weight:600;margin-bottom:12px">⚡ Key decisions across sessions</div>
+    <div id="insightDecisions"><div style="font-size:12px;color:var(--muted)">No decisions found.</div></div>
+  </div>
+</div>
+
+<!-- ── SETTINGS ── -->
+<div class="page" id="page-settings">
+  <div class="ph"><div class="ph-left"><h2>Settings</h2><p>API keys and database configuration</p></div></div>
+  <div class="card" style="max-width:520px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:14px">API Keys</div>
+    <div class="col">
+      <div class="field">
+        <label>Groq API Key</label>
+        <input type="password" id="groqKey" placeholder="gsk_xxxxxxxxxxxx">
+        <span style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:3px">Set in .env file on server · Free at <a href="https://console.groq.com/keys" target="_blank" style="color:var(--blue2)">console.groq.com/keys</a></span>
+      </div>
+
+      <div class="field">
+        <label>Gemini API Key <span style="color:var(--dim);font-weight:400">(optional)</span></label>
+        <input type="password" id="geminiKey" placeholder="AIzaSy_xxxxxxxxxxxx">
+        <span style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:3px">Free at aistudio.google.com · <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue2)">Get key</a></span>
+      </div>
+
+      <div class="field">
+        <label>Mistral API Key <span style="color:var(--dim);font-weight:400">(optional)</span></label>
+        <input type="password" id="mistralKey" placeholder="xxxxxxxxxxxxxxxxxxxx">
+        <span style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:3px">Free tier at console.mistral.ai · <a href="https://console.mistral.ai/api-keys" target="_blank" style="color:var(--blue2)">Get key</a></span>
+      </div>
+
+      <div class="field">
+        <label>AI Provider for Analysis</label>
+        <select id="aiProvider" onchange="onProviderChange()">
+          <option value="groq">Groq — Llama 3.3 70B (Free · Fastest)</option>
+          <option value="gemini">Google Gemini — Gemini 1.5 Flash (Free)</option>
+          <option value="mistral">Mistral — Mistral Large (Free tier)</option>
+        </select>
+      </div>
+
+      <div id="providerHint" style="font-size:11px;font-family:var(--mono);padding:8px 12px;border-radius:7px;background:var(--green3);color:var(--green2)">
+        ✓ Groq handles both transcription + analysis. One key does everything.
+      </div>
+
+      <button class="btn btn-primary btn-sm" onclick="saveApiKeys()">Save Keys</button>
+      <div id="apiSaved" style="display:none;font-size:11px;color:var(--green2);font-family:var(--mono)">✓ Saved</div>
+    </div>
+  </div>
+  <div class="card" style="max-width:520px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:14px">Supabase Database</div>
+    <div class="col">
+      <div class="field">
+        <label>Supabase URL</label>
+        <input type="text" id="supaUrl" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div class="field">
+        <label>Supabase Anon Key</label>
+        <input type="password" id="supaKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="connectSupabase()">Connect Supabase</button>
+      <div id="supaStatus" style="font-size:11px;font-family:var(--mono);color:var(--muted)">Not connected — using browser storage as fallback</div>
+    </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--b1);font-size:11px;color:var(--muted);font-family:var(--mono);line-height:2">
+      How to get Supabase free:<br>
+      1. Go to supabase.com → Create free project<br>
+      2. Project Settings → API → copy URL + anon key<br>
+      3. Go to SQL Editor → run the setup SQL below
+    </div>
+    <div style="margin-top:10px;background:#040608;border:1px solid var(--b1);border-radius:6px;padding:12px;font-family:var(--mono);font-size:10px;color:var(--muted);line-height:1.8;white-space:pre-wrap" id="setupSQL"></div>
+    <button class="btn btn-ghost btn-xs" style="margin-top:8px" onclick="copySetupSQL()">Copy SQL</button>
+  </div>
+  <div class="card" style="max-width:520px">
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px">Data</div>
+    <div style="font-size:11px;font-family:var(--mono);color:var(--muted);line-height:2">
+      Sessions: <span style="color:var(--text)" id="settSessions">0</span><br>
+      Teammates: <span style="color:var(--text)" id="settTeam">0</span>
+    </div>
+    <div class="row" style="margin-top:12px;gap:8px">
+      <button class="btn btn-red btn-xs" onclick="clearLocalData()">Clear browser data</button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+<div class="modal-bg" id="modalAddMember">
+  <div class="modal">
+    <h3 id="modalMemberTitle">Add Teammate</h3>
+    <div class="col">
+      <div class="grid2">
+        <div class="field"><label>Name</label><input type="text" id="mName" placeholder="e.g. Ravi Kumar"></div>
+        <div class="field"><label>Role</label><input type="text" id="mRole" placeholder="e.g. Backend Developer"></div>
+      </div>
+      <div class="field"><label>Tech stack / area of work</label><input type="text" id="mStack" placeholder="e.g. MongoDB, Node.js, Express"></div>
+      <div class="field"><label>Notes</label><textarea id="mNotes" rows="2" placeholder="Anything else you know about them..."></textarea></div>
+      <div class="field">
+        <label>This is me</label>
+        <select id="mIsMe">
+          <option value="false">No — this is a teammate</option>
+          <option value="true">Yes — this is my own profile</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modalAddMember')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveMember()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalAddMeetingType">
+  <div class="modal">
+    <h3>Add Custom Meeting Type</h3>
+    <div class="col">
+      <div class="field"><label>Meeting name</label><input type="text" id="customMeetName" placeholder="e.g. Design review, Sprint planning..."></div>
+      <div class="field"><label>Schedule (optional)</label><input type="text" id="customMeetSchedule" placeholder="e.g. Every Thursday, Biweekly..."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modalAddMeetingType')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveCustomMeetingType()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDIT SESSION MODAL ═══ -->
+<div class="modal-bg" id="modalEditSession">
+  <div class="modal" style="max-width:600px;width:95%">
+    <h3>✏️ Edit Session</h3>
+    <div class="col" style="gap:12px">
+      <div class="grid2">
+        <div class="field">
+          <label>Session Label</label>
+          <input type="text" id="esLabel" placeholder="e.g. Monday Scrum">
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="datetime-local" id="esDate">
+        </div>
+      </div>
+      <div class="field">
+        <label>Meeting Type</label>
+        <select id="esMeetingType">
+          <option value="scrum">Scrum Standup (Mon/Wed)</option>
+          <option value="internal">Internal Meeting (Fri)</option>
+          <option value="oneon1">1-on-1</option>
+          <option value="custom">Other / Custom</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Summary</label>
+        <textarea id="esSummary" rows="3" placeholder="2-3 sentence summary of the meeting..."></textarea>
+      </div>
+      <div class="field">
+        <label>Tasks for me <span style="color:var(--muted);font-weight:400;font-size:10px">(one per line)</span></label>
+        <textarea id="esTasks" rows="3" placeholder="Task 1&#10;Task 2"></textarea>
+      </div>
+      <div class="field">
+        <label>Deadlines <span style="color:var(--muted);font-weight:400;font-size:10px">(one per line)</span></label>
+        <textarea id="esDeadlines" rows="2" placeholder="Deadline 1&#10;Deadline 2"></textarea>
+      </div>
+      <div class="field">
+        <label>People mentioned <span style="color:var(--muted);font-weight:400;font-size:10px">(comma separated)</span></label>
+        <input type="text" id="esPeople" placeholder="Ravi, Priya, John">
+      </div>
+      <div class="field">
+        <label>Decisions <span style="color:var(--muted);font-weight:400;font-size:10px">(one per line)</span></label>
+        <textarea id="esDecisions" rows="2" placeholder="Decision 1&#10;Decision 2"></textarea>
+      </div>
+      <div class="field">
+        <label>Follow-ups / Actions <span style="color:var(--muted);font-weight:400;font-size:10px">(one per line)</span></label>
+        <textarea id="esActions" rows="2" placeholder="Follow-up 1&#10;Follow-up 2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="margin-top:16px">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('modalEditSession')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="saveEditSession()">💾 Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══ SETUP SQL ═══
+const SETUP_SQL = `create table if not exists sessions (
+  id text primary key,
+  date timestamptz default now(),
+  label text,
+  filename text,
+  meeting_type text,
+  transcript text,
+  summary text,
+  tasks jsonb default '[]',
+  deadlines jsonb default '[]',
+  people jsonb default '[]',
+  decisions jsonb default '[]',
+  actions jsonb default '[]',
+  detected_members jsonb default '[]',
+  language text,
+  created_at timestamptz default now()
+);
+
+create table if not exists team_members (
+  id text primary key,
+  name text not null,
+  role text,
+  stack text,
+  notes text,
+  is_me boolean default false,
+  mention_count int default 0,
+  last_mentioned timestamptz,
+  detected boolean default false,
+  created_at timestamptz default now()
+);
+
+create table if not exists task_status (
+  id text primary key,
+  done boolean default false
+);`;
+
+document.getElementById('setupSQL').textContent = SETUP_SQL;
+
+// ═══ STATE ═══
+let groqKey = localStorage.getItem('ag2_groq') || '';
+let claudeKey = ''; // unused - using Groq for analysis
+let supabaseClient = null;
+let sessions = JSON.parse(localStorage.getItem('ag2_sessions') || '[]');
+let teamMembers = JSON.parse(localStorage.getItem('ag2_team') || '[]');
+let taskStatus = JSON.parse(localStorage.getItem('ag2_taskstatus') || '{}');
+let customMeetingTypes = JSON.parse(localStorage.getItem('ag2_meettypes') || '[]');
+let geminiKey = localStorage.getItem('ag2_gemini') || '';
+let mistralKey = localStorage.getItem('ag2_mistral') || '';
+let aiProvider = localStorage.getItem('ag2_provider') || 'groq';
+let selectedFile = null;
+let processing = false;
+let editingMemberId = null;
+const CHUNK = 20 * 1024 * 1024;
+
+// ═══ INIT ═══
+if (groqKey) document.getElementById('groqKey').value = groqKey;
+// Init provider keys
+if (geminiKey) document.getElementById('geminiKey').value = geminiKey;
+if (mistralKey) document.getElementById('mistralKey').value = mistralKey;
+document.getElementById('aiProvider').value = aiProvider;
+setTimeout(onProviderChange, 100);
+const savedSupaUrl = localStorage.getItem('ag2_supa_url');
+const savedSupaKey = localStorage.getItem('ag2_supa_key');
+if (savedSupaUrl) document.getElementById('supaUrl').value = savedSupaUrl;
+if (savedSupaKey) document.getElementById('supaKey').value = savedSupaKey;
+if (savedSupaUrl && savedSupaKey) initSupabase(savedSupaUrl, savedSupaKey);
+// Load config from server on startup
+fetch('/api/config').then(r => r.json()).then(cfg => {
+  if (cfg.hasGroq) document.getElementById('groqKey').value = '(set in .env)';
+  if (cfg.hasGemini) document.getElementById('geminiKey').value = '(set in .env)';
+  if (cfg.hasMistral) document.getElementById('mistralKey').value = '(set in .env)';
+  document.getElementById('aiProvider').value = cfg.provider || 'groq';
+  aiProvider = cfg.provider || 'groq';
+  if (cfg.hasSupabase && cfg.supabaseUrl && cfg.supabaseKey) {
+    document.getElementById('supaUrl').value = cfg.supabaseUrl;
+    document.getElementById('supaKey').value = '(set in .env)';
+    initSupabase(cfg.supabaseUrl, cfg.supabaseKey);
+    loadFromSupabase();
+  }
+  onProviderChange();
+  log('ok', `Server ready · AI: ${cfg.provider || 'groq'} · Supabase: ${cfg.hasSupabase ? 'connected' : 'not set'}`);
+}).catch(() => {
+  log('w', 'No server found — running in standalone mode');
+  const su = localStorage.getItem('ag2_supa_url'), sk = localStorage.getItem('ag2_supa_key');
+  if (su) document.getElementById('supaUrl').value = su;
+  if (sk) document.getElementById('supaKey').value = sk;
+  if (su && sk) initSupabase(su, sk);
+  if (groqKey) document.getElementById('groqKey').value = groqKey;
+  if (geminiKey) document.getElementById('geminiKey').value = geminiKey;
+  if (mistralKey) document.getElementById('mistralKey').value = mistralKey;
+  document.getElementById('aiProvider').value = aiProvider;
+  setTimeout(onProviderChange, 100);
+});
+updateSidebar();
+populateMeetingTypeSelect();
+
+// ═══ NAV ═══
+function nav(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('on'));
+  document.getElementById('page-' + id).classList.add('on');
+  if (el) el.classList.add('on');
+  if (id === 'team') renderTeam();
+  if (id === 'meetings') renderMeetings();
+  if (id === 'tasks') renderTasks('all');
+  if (id === 'insights') renderInsights();
+  if (id === 'settings') {
+    document.getElementById('settSessions').textContent = sessions.length;
+    document.getElementById('settTeam').textContent = teamMembers.length;
+  }
+}
+
+// ═══ SUPABASE ═══
+function initSupabase(url, key) {
+  try {
+    supabaseClient = supabase.createClient(url, key);
+    document.getElementById('sbDot').classList.add('live');
+    document.getElementById('sbConnLabel').textContent = 'Supabase connected';
+    document.getElementById('supaStatus').textContent = '✓ Connected to Supabase';
+    document.getElementById('supaStatus').style.color = 'var(--green2)';
+  } catch(e) {
+    console.error('Supabase init error:', e);
+  }
+}
+
+async function connectSupabase() {
+  const url = document.getElementById('supaUrl').value.trim();
+  const key = document.getElementById('supaKey').value.trim();
+  if (!url || !key) { toast('Enter both URL and key'); return; }
+  localStorage.setItem('ag2_supa_url', url);
+  localStorage.setItem('ag2_supa_key', key);
+  initSupabase(url, key);
+  toast('Supabase connected!');
+}
+
+async function dbSaveSession(session) {
+  localStorage.setItem('ag2_sessions', JSON.stringify(sessions));
+  if (!supabaseClient) return;
+  try {
+    await supabaseClient.from('sessions').upsert({
+      id: session.id, label: session.label, filename: session.filename,
+      meeting_type: session.meetingType, transcript: session.transcript,
+      summary: session.summary, tasks: session.tasks, deadlines: session.deadlines,
+      people: session.people, decisions: session.decisions, actions: session.actions,
+      detected_members: session.detectedMembers || [], language: session.language
+    });
+  } catch(e) { console.warn('Supabase save failed, using local:', e.message); }
+}
+
+async function dbSaveMember(m) {
+  localStorage.setItem('ag2_team', JSON.stringify(teamMembers));
+  if (!supabaseClient) return;
+  try {
+    await supabaseClient.from('team_members').upsert({
+      id: m.id, name: m.name, role: m.role, stack: m.stack,
+      notes: m.notes, is_me: m.isMe, mention_count: m.mentionCount,
+      detected: m.detected
+    });
+  } catch(e) { console.warn('Supabase member save failed:', e.message); }
+}
+
+async function loadFromSupabase() {
+  if (!supabaseClient) return;
+  try {
+    const { data: s } = await supabaseClient.from('sessions').select('*').order('created_at', { ascending: false });
+    const { data: t } = await supabaseClient.from('team_members').select('*');
+    if (s?.length) { sessions = s.map(r => ({...r, tasks: r.tasks||[], deadlines: r.deadlines||[], people: r.people||[], decisions: r.decisions||[], actions: r.actions||[], detectedMembers: r.detected_members||[], meetingType: r.meeting_type})); localStorage.setItem('ag2_sessions', JSON.stringify(sessions)); }
+    if (t?.length) { teamMembers = t.map(r => ({...r, isMe: r.is_me, mentionCount: r.mention_count||0})); localStorage.setItem('ag2_team', JSON.stringify(teamMembers)); }
+    updateSidebar();
+    log('ok', `Loaded ${sessions.length} sessions + ${teamMembers.length} members from Supabase`);
+  } catch(e) { log('w', 'Could not load from Supabase: ' + e.message); }
+}
+
+// ═══ FILE HANDLING ═══
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) setFile(e.target.files[0]); });
+
+function setFile(file) {
+  selectedFile = file;
+  document.getElementById('fileName').textContent = file.name;
+  const chunks = Math.ceil(file.size / CHUNK);
+  document.getElementById('fileSize').textContent = fmtSize(file.size) + ' · ' + (chunks > 1 ? chunks + ' chunks' : '1 chunk');
+  document.getElementById('fileBar').classList.add('show');
+  document.getElementById('processBtn').disabled = false;
+  setPipe(1, 'done', file.name.slice(0, 22) + (file.name.length > 22 ? '…' : ''));
+  log('i', 'File ready: ' + file.name + ' (' + fmtSize(file.size) + ')');
+}
+
+function removeFile() {
+  selectedFile = null; fileInput.value = '';
+  document.getElementById('fileBar').classList.remove('show');
+  document.getElementById('processBtn').disabled = true;
+  resetPipes();
+}
+
+// ═══ PIPELINE ═══
+function setPipe(n, state, val) {
+  const el = document.getElementById('p' + n);
+  el.className = 'pipe ' + state;
+  if (val) document.getElementById('p' + n + 'v').textContent = val;
+}
+function resetPipes() {
+  ['Select file','Transcribe','AI Analysis','Save → Supabase'].forEach((v,i) => setPipe(i+1,'',v));
+}
+function log(type, msg) {
+  const box = document.getElementById('terminal');
+  const el = document.createElement('div');
+  el.className = 'tl ' + type;
+  const t = new Date().toLocaleTimeString('en-IN', { hour12: false });
+  el.textContent = `[${t}] ${msg}`;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ═══ MAIN PROCESS ═══
+async function startProcess() {
+  if (!selectedFile || processing) return;
+  groqKey = document.getElementById('groqKey').value.trim() || groqKey;
+  // API keys are set server-side in .env — only block if truly empty
+  if (!groqKey) { toast('Add Groq API key in Settings'); nav('settings', null); return; }
+
+  processing = true;
+  const btn = document.getElementById('processBtn');
+  btn.disabled = true;
+  document.getElementById('processBtnTxt').textContent = 'Processing...';
+  document.getElementById('cancelBtn').style.display = 'flex';
+
+  // Step 2: Transcribe — server handles chunking
+  setPipe(2, 'active', 'Transcribing...');
+  log('i', 'Uploading to server for transcription...');
+  let transcript = '';
+  try {
+    log('d', `File size: ${fmtSize(selectedFile.size)} — server will auto-chunk`);
+    const result = await transcribeChunk(selectedFile);
+    transcript = result.trim();
+    setPipe(2, 'done', transcript.split(/\s+/).length + ' words ✓');
+    log('ok', `Transcription done: ${transcript.split(/\s+/).length} words`);
+  } catch(err) {
+    setPipe(2, 'err', 'Failed'); log('e', 'Transcription error: ' + err.message);
+    finish(btn); return;
+  }
+
+  // Step 3: AI analysis
+  setPipe(3, 'active', 'Analysing...');
+  log('i', 'Analysing with Claude AI...');
+  let analysis = { summary: '', tasks: [], deadlines: [], people: [], decisions: [], actions: [], detectedMembers: [], language: 'en' };
+  try {
+    analysis = await analyseWithClaude(transcript);
+    setPipe(3, 'done', 'Extracted ✓');
+    log('ok', `Tasks: ${analysis.tasks.length} · Deadlines: ${analysis.deadlines.length} · People: ${analysis.people.length} · Decisions: ${analysis.decisions.length}`);
+    // Auto-add detected members
+    if (analysis.detectedMembers?.length) {
+      log('i', `Auto-detected ${analysis.detectedMembers.length} people: ${analysis.detectedMembers.map(m => m.name).join(', ')}`);
+      autoAddMembers(analysis.detectedMembers);
+    }
+  } catch(err) {
+    setPipe(3, 'err', 'Partial'); log('w', 'AI analysis partial: ' + err.message);
+  }
+
+  // Step 4: Save
+  setPipe(4, 'active', 'Saving...');
+  log('i', 'Saving to database...');
+  const session = {
+    id: Date.now().toString(),
+    date: new Date().toISOString(),
+    label: document.getElementById('sessionLabel').value.trim() || selectedFile.name.replace(/\.[^/.]+$/, ''),
+    filename: selectedFile.name,
+    meetingType: document.getElementById('meetingType').value,
+    transcript, ...analysis
+  };
+  sessions.unshift(session);
+  await dbSaveSession(session);
+  updateMemberMentions(analysis.people, session.date);
+  setPipe(4, 'done', 'Saved ✓');
+  log('ok', `Session saved: ${session.label}`);
+  log('ok', '✓ Done! View in Meetings, Tasks, or Ask Everything.');
+  updateSidebar();
+  toast('Session saved successfully!');
+  finish(btn);
+}
+
+function finish(btn) {
+  processing = false;
+  btn.disabled = false;
+  document.getElementById('processBtnTxt').textContent = 'Process Another';
+  document.getElementById('cancelBtn').style.display = 'none';
+}
+function cancelProcess() { processing = false; finish(document.getElementById('processBtn')); log('w', 'Cancelled.'); }
+
+// ═══ TRANSCRIPTION ═══
+function splitChunks(file) {
+  const chunks = [], ext = file.name.split('.').pop();
+  let offset = 0, idx = 1;
+  while (offset < file.size) {
+    const end = Math.min(offset + CHUNK, file.size);
+    chunks.push(new File([file.slice(offset, end, file.type)], `c${idx}.${ext}`, { type: file.type }));
+    offset = end; idx++;
+  }
+  return chunks;
+}
+async function transcribeChunk(cf) {
+  // Send to our backend server which handles Groq API call securely
+  const fd = new FormData();
+  fd.append('audio', cf);
+  const r = await fetch('/api/transcribe', { method: 'POST', body: fd });
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error || `Server HTTP ${r.status}`); }
+  const data = await r.json();
+  return data.transcript || '';
+}
+
+// ═══ CLAUDE ANALYSIS ═══
+function buildPrompt(transcript) {
+  const teamContext = teamMembers.length ? `Known team members: ${teamMembers.map(m => m.name + (m.role ? ` (${m.role})` : '')).join(', ')}` : '';
+  return `You are a work intelligence assistant for someone NEW to a team. Analyse this meeting transcript (may contain Hindi, Tamil, Telugu, or English).
+${teamContext}
+TRANSCRIPT: """${transcript.slice(0, 6000)}"""
+Return ONLY valid JSON, no markdown, no explanation:
+{"summary":"2-3 sentence summary","tasks":["task assigned to ME"],"deadlines":["deadline mentioned"],"people":["Person Name"],"decisions":["decision made"],"actions":["follow-up I need to do"],"detectedMembers":[{"name":"Person Name","role":"their role if known","stack":"their tech if mentioned"}],"language":"primary language detected"}
+Rules: tasks/actions only for ME. Empty array [] if nothing found.`;
+}
+
+async function analyseWithClaude(transcript) {
+  const provider = localStorage.getItem('ag2_provider') || 'groq';
+  if (provider === 'gemini') return await analyseWithGemini(transcript);
+  if (provider === 'mistral') return await analyseWithMistral(transcript);
+  return await analyseWithGroq(transcript);
+}
+
+async function analyseWithGroq(transcript) {
+  return await callAnalyseAPI(transcript, 'groq');
+}
+async function analyseWithGemini(transcript) {
+  return await callAnalyseAPI(transcript, 'gemini');
+}
+async function analyseWithMistral(transcript) {
+  return await callAnalyseAPI(transcript, 'mistral');
+}
+async function callAnalyseAPI(transcript, provider) {
+  const r = await fetch('/api/analyse', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transcript, teamMembers, provider })
+  });
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error || `Server error ${r.status}`); }
+  return await r.json();
+}
+
+// ═══ AUTO-ADD MEMBERS ═══
+function autoAddMembers(detected) {
+  detected.forEach(d => {
+    if (!d.name) return;
+    const exists = teamMembers.find(m => m.name.toLowerCase() === d.name.toLowerCase());
+    if (!exists) {
+      const m = { id: Date.now().toString() + Math.random(), name: d.name, role: d.role || '', stack: d.stack || '', notes: '', isMe: false, mentionCount: 1, detected: true, createdAt: Date.now() };
+      teamMembers.push(m);
+      dbSaveMember(m);
+      log('ok', `Auto-added: ${m.name}${m.role ? ' (' + m.role + ')' : ''}`);
+    }
+  });
+  localStorage.setItem('ag2_team', JSON.stringify(teamMembers));
+  updateSidebar();
+}
+
+function updateMemberMentions(people, date) {
+  people.forEach(name => {
+    const m = teamMembers.find(t => t.name.toLowerCase() === name.toLowerCase());
+    if (m) { m.mentionCount = (m.mentionCount || 0) + 1; m.lastMentioned = date; dbSaveMember(m); }
+  });
+  localStorage.setItem('ag2_team', JSON.stringify(teamMembers));
+}
+
+// ═══ RENDER TEAM ═══
+const AV_COLORS = ['av-blue','av-green','av-amber','av-purple','av-teal','av-coral'];
+function avColor(i) { return AV_COLORS[i % AV_COLORS.length]; }
+function initials(name) { return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2); }
+
+function renderTeam() {
+  const grid = document.getElementById('teamGrid');
+  if (!teamMembers.length) {
+    grid.innerHTML = '<div class="empty"><span>👥</span><h3>No teammates yet</h3><p>Add manually or upload a recording to auto-detect names.</p></div>';
+    return;
+  }
+  const maxMentions = Math.max(...teamMembers.map(m => m.mentionCount || 0), 1);
+  grid.innerHTML = teamMembers.map((m, i) => `
+    <div class="member-card ${m.detected ? 'detected' : ''} ${m.isMe ? 'me' : ''}" onclick="openEditMember('${m.id}')">
+      ${m.isMe ? '<div class="me-badge">ME</div>' : ''}
+      <div class="row" style="gap:10px;margin-bottom:8px">
+        <div class="avatar ${avColor(i)}">${initials(m.name)}</div>
+        <div><div class="member-name">${esc(m.name)}</div><div class="member-role">${esc(m.role || 'Role unknown')}</div></div>
+      </div>
+      ${m.stack ? `<div class="stack-tags">${m.stack.split(/[,·]/).slice(0,4).map(s => `<span class="tag tag-blue">${esc(s.trim())}</span>`).join('')}</div>` : ''}
+      <div class="member-meta">
+        ${m.mentionCount ? `Mentioned ${m.mentionCount}×` : 'Not yet mentioned'}<br>
+        ${m.detected ? '<span style="color:var(--amber2)">Auto-detected from audio</span>' : 'Manually added'}<br>
+        ${m.notes ? esc(m.notes.slice(0, 60)) + (m.notes.length > 60 ? '…' : '') : ''}
+      </div>
+      <div class="mention-bar"><div class="mention-fill" style="width:${Math.round((m.mentionCount||0)/maxMentions*100)}%"></div></div>
+    </div>
+  `).join('');
+}
+
+// ═══ ADD/EDIT MEMBER ═══
+function openAddMember() {
+  editingMemberId = null;
+  document.getElementById('modalMemberTitle').textContent = 'Add Teammate';
+  ['mName','mRole','mStack','mNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mIsMe').value = 'false';
+  document.getElementById('modalAddMember').classList.add('open');
+}
+function openEditMember(id) {
+  const m = teamMembers.find(t => t.id === id);
+  if (!m) return;
+  editingMemberId = id;
+  document.getElementById('modalMemberTitle').textContent = 'Edit Teammate';
+  document.getElementById('mName').value = m.name;
+  document.getElementById('mRole').value = m.role || '';
+  document.getElementById('mStack').value = m.stack || '';
+  document.getElementById('mNotes').value = m.notes || '';
+  document.getElementById('mIsMe').value = m.isMe ? 'true' : 'false';
+  document.getElementById('modalAddMember').classList.add('open');
+}
+function saveMember() {
+  const name = document.getElementById('mName').value.trim();
+  if (!name) { toast('Name is required'); return; }
+  if (editingMemberId) {
+    const m = teamMembers.find(t => t.id === editingMemberId);
+    if (m) { m.name = name; m.role = document.getElementById('mRole').value.trim(); m.stack = document.getElementById('mStack').value.trim(); m.notes = document.getElementById('mNotes').value.trim(); m.isMe = document.getElementById('mIsMe').value === 'true'; m.detected = false; dbSaveMember(m); }
+  } else {
+    const m = { id: Date.now().toString(), name, role: document.getElementById('mRole').value.trim(), stack: document.getElementById('mStack').value.trim(), notes: document.getElementById('mNotes').value.trim(), isMe: document.getElementById('mIsMe').value === 'true', mentionCount: 0, detected: false, createdAt: Date.now() };
+    teamMembers.push(m);
+    dbSaveMember(m);
+  }
+  localStorage.setItem('ag2_team', JSON.stringify(teamMembers));
+  updateSidebar();
+  closeModal('modalAddMember');
+  renderTeam();
+  toast(editingMemberId ? 'Teammate updated!' : 'Teammate added!');
+}
+
+// ═══ MEETING TYPES ═══
+function openAddMeetingType() { document.getElementById('modalAddMeetingType').classList.add('open'); }
+function saveCustomMeetingType() {
+  const name = document.getElementById('customMeetName').value.trim();
+  if (!name) { toast('Enter a name'); return; }
+  customMeetingTypes.push({ id: Date.now().toString(), name, schedule: document.getElementById('customMeetSchedule').value.trim() });
+  localStorage.setItem('ag2_meettypes', JSON.stringify(customMeetingTypes));
+  populateMeetingTypeSelect();
+  closeModal('modalAddMeetingType');
+  toast('Meeting type added!');
+}
+function populateMeetingTypeSelect() {
+  const sel = document.getElementById('meetingType');
+  const base = ['<option value="scrum">Scrum Standup (Mon/Wed)</option>','<option value="internal">Internal Meeting (Fri)</option>','<option value="oneon1">1-on-1</option>'];
+  const custom = customMeetingTypes.map(t => `<option value="custom_${t.id}">${esc(t.name)}</option>`);
+  sel.innerHTML = base.join('') + custom.join('') + '<option value="custom">Other / Custom</option>';
+}
+
+// ═══ RENDER MEETINGS ═══
+const TYPE_LABELS = { scrum: 'Scrum', internal: 'Internal', oneon1: '1-on-1', custom: 'Custom' };
+const TYPE_CSS = { scrum: 'type-scrum', internal: 'type-internal', oneon1: 'type-oneon1', custom: 'type-custom' };
+function meetTypeLabel(t) { if (t?.startsWith('custom_')) { const ct = customMeetingTypes.find(x => 'custom_'+x.id === t); return ct?.name || 'Custom'; } return TYPE_LABELS[t] || t || 'Meeting'; }
+function meetTypeCss(t) { if (t?.startsWith('custom_')) return 'type-custom'; return TYPE_CSS[t] || 'type-custom'; }
+
+function renderMeetings() {
+  const filter = document.getElementById('meetFilter').value;
+  const filtered = filter === 'all' ? sessions : sessions.filter(s => s.meetingType === filter || (filter === 'custom' && s.meetingType?.startsWith('custom_')));
+  const el = document.getElementById('meetingList');
+  if (!filtered.length) { el.innerHTML = '<div class="empty"><span>📅</span><h3>No meetings found</h3><p>Upload a recording to add your first meeting.</p></div>'; return; }
+  el.innerHTML = filtered.map(s => `
+    <div class="meeting-card" id="mc-${s.id}">
+      <div class="meeting-head" onclick="toggleMeeting('${s.id}')">
+        <span class="meeting-type-badge ${meetTypeCss(s.meetingType)}">${meetTypeLabel(s.meetingType)}</span>
+        <span class="meeting-title">${esc(s.label)}</span>
+        <span class="meeting-date">${fmtDate(s.date)}</span>
+        <svg style="width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2;flex-shrink:0" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="meeting-body">
+        ${s.summary ? `<p style="font-size:12px;line-height:1.7;color:var(--muted);margin-bottom:14px;padding:10px 12px;background:var(--s2);border-radius:7px">${esc(s.summary)}</p>` : ''}
+        <div class="extract-grid">
+          ${exSection('task','Tasks for me', s.tasks||[])}
+          ${exSection('deadline','Deadlines', s.deadlines||[])}
+          ${exSection('person','People', s.people||[])}
+          ${exSection('decision','Decisions', s.decisions||[])}
+          ${exSection('action','Follow-ups', s.actions||[])}
+        </div>
+        <div style="font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Transcript</div>
+        <div class="transcript-box">${esc(s.transcript||'')}</div>
+        <div class="row" style="margin-top:10px;gap:7px">
+          <button class="btn btn-ghost btn-xs" onclick="openEditSession('${s.id}',event)">✏️ Edit</button>
+          <button class="btn btn-ghost btn-xs" onclick="copyTxt('${s.id}',event)">Copy transcript</button>
+          <button class="btn btn-red btn-xs" onclick="deleteSession('${s.id}',event)">Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+function exSection(type, title, items) {
+  return `<div class="extract"><div class="ex-title ${type}">${title} (${items.length})</div>${items.length ? items.map(i => `<div class="ex-item">${esc(i)}</div>`).join('') : '<div style="font-size:11px;color:var(--dim)">None found</div>'}</div>`;
+}
+function toggleMeeting(id) { document.getElementById('mc-'+id)?.classList.toggle('open'); }
+function copyTxt(id, e) { e.stopPropagation(); const s = sessions.find(x => x.id === id); if(s) navigator.clipboard.writeText(s.transcript).then(() => toast('Copied!')); }
+function deleteSession(id, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this session?')) return;
+  sessions = sessions.filter(s => s.id !== id);
+  localStorage.setItem('ag2_sessions', JSON.stringify(sessions));
+  if (supabaseClient) supabaseClient.from('sessions').delete().eq('id', id).then(() => {});
+  updateSidebar(); renderMeetings(); toast('Deleted');
+}
+
+// ═══ EDIT SESSION ═══
+let editingSessionId = null;
+function openEditSession(id, e) {
+  e.stopPropagation();
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  editingSessionId = id;
+
+  document.getElementById('esLabel').value = s.label || '';
+  // Format date for datetime-local input
+  const d = new Date(s.date);
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+  document.getElementById('esDate').value = local;
+  document.getElementById('esMeetingType').value = s.meetingType || 'custom';
+  document.getElementById('esSummary').value = s.summary || '';
+  document.getElementById('esTasks').value = (s.tasks || []).join('\n');
+  document.getElementById('esDeadlines').value = (s.deadlines || []).join('\n');
+  document.getElementById('esPeople').value = (s.people || []).join(', ');
+  document.getElementById('esDecisions').value = (s.decisions || []).join('\n');
+  document.getElementById('esActions').value = (s.actions || []).join('\n');
+
+  document.getElementById('modalEditSession').classList.add('open');
+}
+
+function saveEditSession() {
+  const s = sessions.find(x => x.id === editingSessionId);
+  if (!s) return;
+
+  s.label       = document.getElementById('esLabel').value.trim() || s.label;
+  s.date        = new Date(document.getElementById('esDate').value).toISOString();
+  s.meetingType = document.getElementById('esMeetingType').value;
+  s.summary     = document.getElementById('esSummary').value.trim();
+  s.tasks       = document.getElementById('esTasks').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  s.deadlines   = document.getElementById('esDeadlines').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  s.people      = document.getElementById('esPeople').value.split(',').map(x=>x.trim()).filter(Boolean);
+  s.decisions   = document.getElementById('esDecisions').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  s.actions     = document.getElementById('esActions').value.split('\n').map(x=>x.trim()).filter(Boolean);
+
+  localStorage.setItem('ag2_sessions', JSON.stringify(sessions));
+  if (supabaseClient) dbSaveSession(s);
+
+  closeModal('modalEditSession');
+  renderMeetings();
+  updateSidebar();
+  toast('✅ Session updated!');
+}
+
+// ═══ RENDER TASKS ═══
+function renderTasks(filter) {
+  const all = sessions.flatMap(s => (s.tasks||[]).map(t => ({ id: s.id+'__'+t, text: t, from: s.label, date: s.date, done: !!taskStatus[s.id+'__'+t] })));
+  const filtered = filter === 'pending' ? all.filter(t => !t.done) : filter === 'done' ? all.filter(t => t.done) : all;
+  const el = document.getElementById('taskList');
+  if (!filtered.length) { el.innerHTML = `<div class="empty"><span>✅</span><h3>No ${filter==='all'?'':filter+' '}tasks</h3><p>Tasks extracted from recordings appear here.</p></div>`; return; }
+  el.innerHTML = filtered.map(t => `
+    <div class="task-item">
+      <div class="chk ${t.done?'done':''}" onclick="toggleTask('${t.id}',this)"></div>
+      <div style="flex:1"><div class="task-txt ${t.done?'done':''}">${esc(t.text)}</div><div class="task-from">From: ${esc(t.from)} · ${fmtDate(t.date)}</div></div>
+    </div>
+  `).join('');
+}
+function filterTasks(filter, btn) {
+  document.querySelectorAll('.flt').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on'); renderTasks(filter);
+}
+function toggleTask(id, el) {
+  taskStatus[id] = !taskStatus[id];
+  localStorage.setItem('ag2_taskstatus', JSON.stringify(taskStatus));
+  el.classList.toggle('done');
+  if (supabaseClient) supabaseClient.from('task_status').upsert({ id, done: taskStatus[id] }).then(() => {});
+  const txt = el.nextElementSibling?.querySelector('.task-txt');
+  if (txt) txt.classList.toggle('done');
+}
+
+// ═══ ASK EVERYTHING ═══
+let qaHistory = [];
+function askSuggestion(el) { document.getElementById('qaInput').value = el.textContent; askQuestion(); }
+async function askQuestion() {
+  const q = document.getElementById('qaInput').value.trim();
+  if (!q || !groqKey) { toast('Add Groq API key in Settings'); return; }
+  if (!sessions.length) { toast('Upload at least one recording first'); return; }
+  const btn = document.getElementById('askBtn');
+  btn.disabled = true; btn.innerHTML = '<div class="spin"></div> Thinking...';
+
+  const context = sessions.map(s => `[${fmtDate(s.date)} · ${meetTypeLabel(s.meetingType)} · ${s.label}]\nSummary: ${s.summary||''}\nTasks: ${(s.tasks||[]).join('; ')}\nDeadlines: ${(s.deadlines||[]).join('; ')}\nPeople: ${(s.people||[]).join(', ')}\nDecisions: ${(s.decisions||[]).join('; ')}\nTranscript excerpt: ${(s.transcript||'').slice(0,800)}`).join('\n\n---\n\n');
+
+  const teamCtx = teamMembers.length ? `\nTeam: ${teamMembers.map(m => `${m.name} (${m.role||'unknown role'}${m.stack ? ', '+m.stack : ''})`).join(', ')}` : '';
+
+  try {
+    const answer = await askAI(teamCtx, context, q);
+    qaHistory.unshift({ q, a: answer, time: Date.now() });
+    renderQA();
+    document.getElementById('qaInput').value = '';
+  } catch(e) { toast('AI error: ' + e.message); }
+  btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Ask';
+}
+function renderQA() {
+  document.getElementById('qaHistory').innerHTML = qaHistory.map(item => `
+    <div class="qa-item">
+      <div class="qa-q">Q: ${esc(item.q)}</div>
+      <div class="qa-a">${esc(item.a)}</div>
+      <div style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:6px">${new Date(item.time).toLocaleString('en-IN')}</div>
+    </div>
+  `).join('');
+}
+
+// ═══ INSIGHTS ═══
+function renderInsights() {
+  const allP = sessions.flatMap(s => s.people||[]);
+  const allT = sessions.flatMap(s => s.tasks||[]);
+  const allD = sessions.flatMap(s => s.deadlines||[]);
+  const allDec = sessions.flatMap(s => s.decisions||[]);
+  document.getElementById('ins-s').textContent = sessions.length;
+  document.getElementById('ins-t').textContent = allT.length;
+  document.getElementById('ins-d').textContent = allD.length;
+  document.getElementById('ins-p').textContent = [...new Set(allP)].length;
+  const freq = {};
+  allP.forEach(p => freq[p] = (freq[p]||0) + 1);
+  const sorted = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,8);
+  const maxF = sorted[0]?.[1]||1;
+  document.getElementById('insightPeople').innerHTML = sorted.length
+    ? sorted.map(([n,c],i) => `<div class="person-row"><div class="avatar ${avColor(i)}" style="width:32px;height:32px;font-size:11px">${initials(n)}</div><div style="flex:1"><div style="font-size:12px;font-weight:600">${esc(n)}</div><div class="freq-bar" style="margin-top:4px"><div class="freq-fill" style="width:${Math.round(c/maxF*100)}%"></div></div></div><span style="font-size:10px;color:var(--muted);font-family:var(--mono)">${c}×</span></div>`).join('')
+    : '<div style="font-size:12px;color:var(--muted)">No data yet.</div>';
+  document.getElementById('insightDeadlines').innerHTML = allD.slice(0,8).length
+    ? allD.slice(0,8).map(d => `<div style="font-size:12px;padding:6px 10px;background:var(--s2);border-radius:6px;margin-bottom:5px;color:var(--amber2)">⏰ ${esc(d)}</div>`).join('')
+    : '<div style="font-size:12px;color:var(--muted)">No deadlines found.</div>';
+  document.getElementById('insightDecisions').innerHTML = allDec.slice(0,8).length
+    ? allDec.slice(0,8).map(d => `<div style="font-size:12px;padding:6px 10px;background:var(--s2);border-radius:6px;margin-bottom:5px;color:var(--teal2)">◈ ${esc(d)}</div>`).join('')
+    : '<div style="font-size:12px;color:var(--muted)">No decisions found.</div>';
+}
+
+// ═══ SETTINGS ═══
+function saveApiKeys() {
+  aiProvider = document.getElementById('aiProvider').value;
+  localStorage.setItem('ag2_provider', aiProvider);
+  onProviderChange();
+  document.getElementById('apiSaved').style.display = 'block';
+  document.getElementById('apiSaved').textContent = '✓ Provider saved. API keys are set in your .env file on the server.';
+  toast('Provider saved!');
+}
+
+function onProviderChange() {
+  aiProvider = document.getElementById('aiProvider')?.value || aiProvider;
+  const hints = {
+    groq: { bg: 'var(--green3)', color: 'var(--green2)', text: '✓ Groq handles both transcription + analysis. One key does everything.' },
+    gemini: { bg: 'rgba(91,141,248,0.12)', color: 'var(--blue2)', text: '✓ Gemini Flash for analysis. Still need Groq key for audio transcription.' },
+    mistral: { bg: 'rgba(156,111,252,0.12)', color: 'var(--purple2)', text: '✓ Mistral for analysis. Still need Groq key for audio transcription.' }
+  };
+  const h = hints[aiProvider] || hints.groq;
+  const el = document.getElementById('providerHint');
+  if (el) { el.style.background = h.bg; el.style.color = h.color; el.textContent = h.text; }
+}
+function clearLocalData() {
+  if (!confirm('Clear all local data?')) return;
+  ['ag2_sessions','ag2_team','ag2_taskstatus','ag2_meettypes'].forEach(k => localStorage.removeItem(k));
+  sessions = []; teamMembers = []; taskStatus = {}; customMeetingTypes = [];
+  updateSidebar(); toast('Local data cleared');
+}
+function copySetupSQL() { navigator.clipboard.writeText(SETUP_SQL).then(() => toast('SQL copied!')); }
+
+// ═══ SIDEBAR BADGES ═══
+function updateSidebar() {
+  document.getElementById('sb-team-count').textContent = teamMembers.length;
+  document.getElementById('sb-meet-count').textContent = sessions.length;
+  document.getElementById('sb-task-count').textContent = sessions.flatMap(s => s.tasks||[]).filter(t => !taskStatus[sessions.find(s => (s.tasks||[]).includes(t))?.id+'__'+t]).length;
+}
+
+// ═══ MODAL ═══
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+// ═══ HELPERS ═══
+async function askAI(teamCtx, context, q) {
+  const provider = localStorage.getItem('ag2_provider') || 'groq';
+  const r = await fetch('/api/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question: q, sessions, teamMembers, provider })
+  });
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e?.error || `Server error ${r.status}`); }
+  const data = await r.json();
+  return data.answer || 'No answer.';
+}
+
+function fmtSize(b) { if(b<1024)return b+'B'; if(b<1048576)return(b/1024).toFixed(1)+'KB'; return(b/1048576).toFixed(1)+'MB'; }
+function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
+function esc(s) { if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+</script>
+</body>
+</html>

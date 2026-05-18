@@ -722,9 +722,18 @@ if (savedSupaKey) document.getElementById('supaKey').value = savedSupaKey;
 if (savedSupaUrl && savedSupaKey) initSupabase(savedSupaUrl, savedSupaKey);
 // Load config from server on startup
 fetch('/api/config').then(r => r.json()).then(cfg => {
-  if (cfg.hasGroq) document.getElementById('groqKey').value = '(set in .env)';
-  if (cfg.hasGemini) document.getElementById('geminiKey').value = '(set in .env)';
-  if (cfg.hasMistral) document.getElementById('mistralKey').value = '(set in .env)';
+  if (cfg.hasGroq) {
+    document.getElementById('groqKey').value = '(set in .env)';
+    groqKey = '(set in .env)';
+  }
+  if (cfg.hasGemini) {
+    document.getElementById('geminiKey').value = '(set in .env)';
+    geminiKey = '(set in .env)';
+  }
+  if (cfg.hasMistral) {
+    document.getElementById('mistralKey').value = '(set in .env)';
+    mistralKey = '(set in .env)';
+  }
   document.getElementById('aiProvider').value = cfg.provider || 'groq';
   aiProvider = cfg.provider || 'groq';
   if (cfg.hasSupabase && cfg.supabaseUrl && cfg.supabaseKey) {
